@@ -3,33 +3,51 @@ import torch.nn as nn
 import torch.nn.parallel
 import torch.utils.data
 import torch.nn.functional as F
-from pointnet_utils_wo_stn import PointNetEncoder
+from pointnet_utils_wo_stn import define_mlp
 
 
 class get_model(nn.Module):
-    def __init__(self, num_class):
+    def __init__(self, num_class, channel=9):
         super(get_model, self).__init__()
         self.k = num_class
-        self.feat = PointNetEncoder(global_feat=False, channel=9)
-        self.conv1 = torch.nn.Conv1d(1088, 512, 1)
-        self.conv2 = torch.nn.Conv1d(512, 256, 1)
-        self.conv3 = torch.nn.Conv1d(256, 128, 1)
-        self.conv4 = torch.nn.Conv1d(128, self.k, 1)
-        self.bn1 = nn.BatchNorm1d(512)
-        self.bn2 = nn.BatchNorm1d(256)
-        self.bn3 = nn.BatchNorm1d(128)
+
+        self.mlp1 = define_mlp(channel, 64, 64)
+        self.mlp2 = define_mlp(64, 1024, 128, apply_relu=False)
+        self.mlp3 = define_mlp(1088, 128, 512, 256)
+        self.mlp4 = define_mlp(128, self.k, apply_bn=False, apply_relu=False)
 
     def forward(self, x):
-        batchsize = x.size()[0]
-        n_pts = x.size()[2]
-        x = self.feat(x)
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = self.conv4(x)
+        # x: (B, C, N)
+        B, C, N = x.size()
+
+        # ----- Encoder -----
+        # X1: (B, 64, N)
+        x1 = self.mlp1(x)
+
+        # X2: (B, 1024, N)
+        x2 = self.mlp2(x1)
+
+        # h: (B, 1024, 1)
+        h = torch.max(x2, 2, keepdim=True)[0]
+
+        # H: (B, 1024, N)
+        H = h.repeat(1, 1, N)
+
+        # X3: concat → (B, 1088, N)
+        x3 = torch.cat([x1, H], dim=1)
+
+        # ----- Decoder -----
+        # X4: (B, 128, N)
+        x4 = self.mlp3(x3)
+
+        # Y logits: (B, k, N)
+        x = self.mlp4(x4)
+
+        # reshape to (B, N, k)
         x = x.transpose(2, 1).contiguous()
         x = F.log_softmax(x.view(-1, self.k), dim=-1)
-        x = x.view(batchsize, n_pts, self.k)
+        x = x.view(B, N, self.k)
+
         return x, None
 
 
