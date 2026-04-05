@@ -365,7 +365,7 @@ def main(args):
             )
             mIoU = np.mean(
                 np.array(total_correct_class)
-                / (np.array(total_iou_deno_class, dtype=np.float) + 1e-6)
+                / (np.array(total_iou_deno_class, dtype=np.float64) + 1e-6)
             )
             log_string("eval mean loss: %f" % (loss_sum / float(num_batches)))
             log_string("eval point avg class IoU: %f" % (mIoU))
@@ -375,7 +375,7 @@ def main(args):
                 % (
                     np.mean(
                         np.array(total_correct_class)
-                        / (np.array(total_seen_class, dtype=np.float) + 1e-6)
+                        / (np.array(total_seen_class, dtype=np.float64) + 1e-6)
                     )
                 )
             )
