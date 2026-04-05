@@ -70,6 +70,7 @@ def parse_args():
         default=3,
         help="aggregate segmentation scores with voting [default: 5]",
     )
+    parser.add_argument("--root_dir", type=str, default="./data/stanford_indoor3d")
     return parser.parse_args()
 
 
@@ -113,7 +114,7 @@ def main(args):
     BATCH_SIZE = args.batch_size
     NUM_POINT = args.num_point
 
-    root = "data/s3dis/stanford_indoor3d/"
+    root = args.root_dir
 
     TEST_DATASET_WHOLE_SCENE = ScannetDatasetWholeScene(
         root, split="test", test_area=args.test_area, block_points=NUM_POINT
@@ -124,7 +125,9 @@ def main(args):
     model_name = os.listdir(experiment_dir + "/logs")[0].split(".")[0]
     MODEL = importlib.import_module(model_name)
     classifier = MODEL.get_model(NUM_CLASSES).cuda()
-    checkpoint = torch.load(str(experiment_dir) + "/checkpoints/best_model.pth")
+    path_to_checkpoint = str(experiment_dir) + "/checkpoints/best_model.pth"
+    print(f"{path_to_checkpoint = }")
+    checkpoint = torch.load(path_to_checkpoint, weights_only=False)
     classifier.load_state_dict(checkpoint["model_state_dict"])
     classifier = classifier.eval()
 
