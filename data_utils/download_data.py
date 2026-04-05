@@ -10,48 +10,40 @@ def unpack_data(path_to_data: Path) -> Path:
 
     logger.info(f"Unpacking: {path_to_data}")
 
-    try:
-        if path_to_data.suffix == ".zip":
-            subprocess.run(
-                f"unzip -q '{path_to_data}' -d '{out_dir}'",
-                shell=True,
-                check=True,
-            )
+    if path_to_data.suffix == ".zip":
+        subprocess.run(
+            f"unzip '{path_to_data}' -d '{out_dir}'",
+            shell=True,
+            check=True,
+        )
 
-        elif (
-            path_to_data.suffixes[-2:] == [".tar", ".gz"]
-            or path_to_data.suffix == ".tgz"
-        ):
-            subprocess.run(
-                f"tar -xzf '{path_to_data}' -C '{out_dir}'",
-                shell=True,
-                check=True,
-            )
+    elif path_to_data.suffixes[-2:] == [".tar", ".gz"] or path_to_data.suffix == ".tgz":
+        subprocess.run(
+            f"tar -xzf '{path_to_data}' -C '{out_dir}'",
+            shell=True,
+            check=True,
+        )
 
-        elif path_to_data.suffix == ".tar":
-            subprocess.run(
-                f"tar -xf '{path_to_data}' -C '{out_dir}'",
-                shell=True,
-                check=True,
-            )
+    elif path_to_data.suffix == ".tar":
+        subprocess.run(
+            f"tar -xf '{path_to_data}' -C '{out_dir}'",
+            shell=True,
+            check=True,
+        )
 
-        elif path_to_data.suffix == ".gz":
-            subprocess.run(
-                f"gunzip -k '{path_to_data}'",
-                shell=True,
-                check=True,
-            )
+    elif path_to_data.suffix == ".gz":
+        subprocess.run(
+            f"gunzip -k '{path_to_data}'",
+            shell=True,
+            check=True,
+        )
 
-        else:
-            logger.warning("Unknown format → skipping unpack")
-            return path_to_data
+    else:
+        logger.warning("Unknown format → skipping unpack")
+        return path_to_data
 
-        logger.success("Unpacked successfully")
-        return out_dir
-
-    except Exception:
-        logger.error("Unpack failed")
-        raise
+    logger.success("Unpacked successfully")
+    return out_dir
 
 
 def clean_macos_artifacts(root: Path):
@@ -78,6 +70,7 @@ def download_pipeline(force: bool = False, cleanup_on_error: bool = True):
         @wraps(func)
         def wrapper(url: str, name: str, out_dir: str, *args, **kwargs):
             out_dir_path = Path(out_dir)
+            out_dir_path.mkdir(exist_ok=True)
             archive_path = out_dir_path / name
 
             def cleanup():
@@ -113,11 +106,11 @@ def download_pipeline(force: bool = False, cleanup_on_error: bool = True):
 
 
 @download_pipeline(force=True, cleanup_on_error=True)
-def download_func_ydisk(link: str, archive_name: str, path_to_data_dir: str):
-    path_to_save = Path(path_to_data_dir) / archive_name
+def download_func_ydisk(url, name, out_dir):
+    path_to_save = Path(out_dir) / name
 
     subprocess.run(
-        f"curl -L $(yadisk-direct {link}) -o {path_to_save}",
+        f"curl -L $(yadisk-direct {url}) -o {path_to_save}",
         shell=True,
         check=True,
     )
@@ -127,16 +120,16 @@ def parse_args():
     import argparse
 
     parser = argparse.ArgumentParser("Testing")
-    parser.add_argument("--link", type=str)
-    parser.add_argument("--archive_name", type=str)
-    parser.add_argument("--path_to_data_dir", type=str)
+    parser.add_argument("--url", type=str)
+    parser.add_argument("--name", type=str)
+    parser.add_argument("--out_dir", type=str)
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
     download_func_ydisk(
-        link=args.link,
-        archive_name=args.archive_name,
-        path_to_data_dir=args.path_to_data_dir,
+        url=args.url,
+        name=args.name,
+        out_dir=args.out_dir,
     )
