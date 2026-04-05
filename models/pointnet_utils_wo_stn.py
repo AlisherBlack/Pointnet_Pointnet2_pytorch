@@ -5,27 +5,23 @@ import torch.utils.data
 import torch.nn.functional as F
 
 
-class PointNetEncoder(nn.Module):
-    def __init__(self, global_feat=True, channel=3):
-        super(PointNetEncoder, self).__init__()
-        self.conv1 = torch.nn.Conv1d(channel, 64, 1)
-        self.conv2 = torch.nn.Conv1d(64, 128, 1)
-        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(1024)
-        self.global_feat = global_feat
+def define_layer(in_c, out_c, apply_bn=True, apply_relu=True):
+    seq = [torch.nn.Conv1d(in_c, out_c, 1)]
+    if apply_bn:
+        seq.append(nn.BatchNorm1d(out_c))
+    if apply_relu:
+        seq.append(nn.ReLU())
+    return nn.Sequential(*seq)
 
-    def forward(self, x):
-        B, D, N = x.size()
-        x = F.relu(self.bn1(self.conv1(x)))
-        pointfeat = x
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = self.bn3(self.conv3(x))
-        x = torch.max(x, 2, keepdim=True)[0]
-        x = x.view(-1, 1024)
-        if self.global_feat:
-            return x
-        else:
-            x = x.view(-1, 1024, 1).repeat(1, 1, N)
-            return torch.cat([x, pointfeat], 1)
+
+def define_mlp(in_c, out_c, *hidden_c, apply_bn=True, apply_relu=True):
+    layers = []
+    prev_c = in_c
+
+    for c in hidden_c:
+        layers.append(define_layer(prev_c, c, apply_bn=True, apply_relu=True))
+        prev_c = c
+
+    layers.append(define_layer(prev_c, out_c, apply_bn=apply_bn, apply_relu=apply_relu))
+
+    return nn.Sequential(*layers)
