@@ -106,6 +106,7 @@ def parse_args():
         default=5,
         help="Which area to use for test, option: 1-6 [default: 5]",
     )
+    parser.add_argument("--root_dir", type=str, default="./data/stanford_indoor3d")
 
     return parser.parse_args()
 
@@ -148,7 +149,7 @@ def main(args):
     log_string("PARAMETER ...")
     log_string(args)
 
-    root = "data/stanford_indoor3d/"
+    root = args.root_dir
     NUM_CLASSES = 13
     NUM_POINT = args.npoint
     BATCH_SIZE = args.batch_size
