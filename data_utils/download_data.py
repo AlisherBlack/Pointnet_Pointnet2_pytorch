@@ -127,9 +127,9 @@ def parse_args():
     import argparse
 
     parser = argparse.ArgumentParser("Testing")
-    parser.add_argument("--link", action="str")
-    parser.add_argument("--archive_name", action="str")
-    parser.add_argument("--path_to_data_dir", action="str")
+    parser.add_argument("--link", type=str)
+    parser.add_argument("--archive_name", type=str)
+    parser.add_argument("--path_to_data_dir", type=str)
     return parser.parse_args()
 
 
