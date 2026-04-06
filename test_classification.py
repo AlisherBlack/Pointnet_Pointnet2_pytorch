@@ -28,6 +28,7 @@ def parse_args():
     parser.add_argument(
         "--batch_size", type=int, default=24, help="batch size in training"
     )
+    parser.add_argument("--root_dir", type=str)
     parser.add_argument(
         "--num_category",
         default=40,
@@ -120,7 +121,7 @@ def main(args):
 
     """DATA LOADING"""
     log_string("Load dataset ...")
-    data_path = "data/modelnet40_normal_resampled/"
+    data_path = args.root_dir
 
     test_dataset = ModelNetDataLoader(
         root=data_path, args=args, split="test", process_data=False
@@ -138,7 +139,9 @@ def main(args):
     if not args.use_cpu:
         classifier = classifier.cuda()
 
-    checkpoint = torch.load(str(experiment_dir) + "/checkpoints/best_model.pth")
+    checkpoint = torch.load(
+        str(experiment_dir) + "/checkpoints/best_model.pth", weights_only=False
+    )
     classifier.load_state_dict(checkpoint["model_state_dict"])
 
     with torch.no_grad():

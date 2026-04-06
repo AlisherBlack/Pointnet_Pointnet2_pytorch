@@ -62,6 +62,7 @@ def parse_args():
     parser.add_argument(
         "--process_data", action="store_true", default=False, help="save data offline"
     )
+    parser.add_argument("--root_dir", type=str)
     parser.add_argument(
         "--use_uniform_sample",
         action="store_true",
@@ -152,7 +153,7 @@ def main(args):
 
     """DATA LOADING"""
     log_string("Load dataset ...")
-    data_path = "data/modelnet40_normal_resampled/"
+    data_path = args.root_dir
 
     train_dataset = ModelNetDataLoader(
         root=data_path, args=args, split="train", process_data=args.process_data

@@ -6,13 +6,13 @@ pointnet_dir=$(realpath $(dirname $0)/..)
 pushd $pointnet_dir >/dev/null
 
 
-model_name=pointnet_sem_seg_wo_stn
+model_name=pointnet_cls
 
-python train_semseg.py \
+python train_classification.py \
     --model $model_name \
     --log_dir $model_name \
-    --test_area 5 \
-    --root_dir ./data/stanford_indoor3d/
+     --use_normals \
+    --root_dir /home/alisherblack/stuff/sonata/cache/modelnet40_normal_resampled
 
 
 popd >/dev/null
